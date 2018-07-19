@@ -48,65 +48,85 @@ class GradientDescent:
         self.scores = np.zeros((10,1000))
         self.oneHot = oneHotMatrix 
         self.gradients = np.zeros((10,10))
+    	self.savedScores = np.zeros((10,1000))
     
+    def softmax(self,vec,labels):
+        #vec -= np.max(vec)
+        newM = np.zeros((1000,10))
+        
+        for slot in range(1000):
+                
+                #vec[labels[column]] -= np.max(vec[column])
+            newM = np.exp(vec[slot][labels[slot]])/np.sum(np.exp(vec[slot]))
+        
+        return (-np.log(newM))
     
+    '''
     def softmax(self,vec):
         #vec -= np.max(vec)
         newM = np.zeros((1000,10))
+        
         for column in range(1000):
                 vec[column] -= np.max(vec[column])
                 newM[column] = np.exp(vec[column])/np.sum(np.exp(vec[column]))
         
-        #np.exp(vec)/(np.sum(np.exp(vec)))
-        
         return (-np.log(newM))
-    
+    '''
     
     def numerical_gradient(self, loss1, loss2):
         return ((loss2 - loss1)/self.delta)
     
     
     def loss(self, scores):
-        return np.sum(scores)/1000.0
+        #return np.sum(scores)/1000.0
+        return np.mean(scores)
         
         
-    def compute_loss(self, features):
+    def compute_loss(self, features,labels):
     	#dot product Weights and Features  
     	G.scores = np.dot(features,G.W)
+        self.savedScores = G.scores
+
     	#softmax output    
-        MAX = G.softmax(G.scores)
+        MAX = G.softmax(G.scores,labels)
         #retain only the values held by the correct label
         G.scores = MAX * oneHot
 		#compute adv loss
         loss = G.loss(G.scores)
         
         return loss
-        
+     
+    def accuracy(self,scores,labels):
 
+        guesses = np.argmax(scores,axis=1)
+        correct = np.equal(guesses,labels)
+
+        return np.count_nonzero(correct)/1000.0
+        
+        
 oneHot = np.eye(10)[labels]    
+print("init")
 G = GradientDescent(oneHot)
 NUM_EPOCHS = 1000
 
-#labels2 = labels[:,0]
 
-#print(labels2.shape)
-
-
-plt.figure()
-
+Accuracys = []
 Losses = []
 
 for num in range(NUM_EPOCHS):
-     
-    loss1 = G.compute_loss(features)
-   
-   
+    print(num)
+    loss1 = G.compute_loss(features,labels)
+    
+    Accuracys.append(G.accuracy(G.savedScores,labels))
+    
+    
+    
     for i in range(np.shape(G.W)[0]):
     	for j in range(np.shape(G.W)[1]):
     	
 	    	G.W[i][j] += G.delta
-    
-	    	loss2 = G.compute_loss(features)
+    		
+	    	loss2 = G.compute_loss(features,labels)
 
 	    	grad = G.numerical_gradient(loss1,loss2)
 			
@@ -117,12 +137,26 @@ for num in range(NUM_EPOCHS):
     
     G.W = (G.W + (G.STEP_SIZE * -G.gradients))
     
-    print(loss1)
     Losses.append(loss1)
-    
 
 
+
+plt.figure()
+plt.ylabel('Softmax Cost')
+plt.xlabel('epochs')
 plt.plot(Losses)
 plt.show()
 
+
+#-----
+plt.figure()
+plt.ylabel('Classification Accuracy')
+plt.xlabel('epochs')
+plt.plot(Accuracys)
+plt.show()
+
 print("finished")    
+
+
+
+

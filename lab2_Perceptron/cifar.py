@@ -3,17 +3,45 @@ import matplotlib.pyplot as plt
 import pandas
 
 
+def unpickle( file ):
+    import cPickle
+    fo = open(file, 'rb')
+    dict = cPickle.load(fo)
+    fo.close()
+    return dict
+
+
 class Perceptron:
 	
 
 	def __init__(self):
+		'''
+		file = 'cifar-10-batches-py/data_batch_1'
+		import cPickle
+		fo = open(file, 'rb')
+ 		dict = cPickle.load(fo)
+  		fo.close()
+    		 
+		data = dict
+ 		'''
+ 		data = unpickle( 'cifar-10-batches-py/data_batch_1' )
+		self.features = data['data']
+		#print(type(self.features))
+		#print(self.features)
 		
-		data = pandas.read_csv( 'Fisher.csv' )
-		m = data.as_matrix()
-		labels = m[:,0]
-		labels[ labels==2 ] = 1  # squash class 2 into class 1
-		self.labels = np.atleast_2d( labels ).T
-		self.features = m[:,1:5]
+		
+		self.labels = data['labels']
+		self.labels = np.atleast_2d( self.labels ).T
+ 
+		# squash classes 0-4 into class 0, and squash classes 5-9 into class 1
+		self.labels[ self.labels < 5 ] = 0
+		self.labels[ self.labels >= 5 ] = 1
+		
+		
+		print(type(self.labels))
+		print(self.labels)
+		
+		
 		self.weights = np.random.randn(4)
 		self.bias = 0.0
 		self.learningRate = .01
@@ -46,11 +74,13 @@ class Perceptron:
 			self.fig.append(score)
 
 
+
 	def showPlot(self):
 			print(self.fig)
 			plt.plot(self.fig)
 			plt.show()	
 			
+
 
 	def Threshold(self,Input):
 		if ((np.dot(self.weights,Input) + self.bias) >= 0.0):
